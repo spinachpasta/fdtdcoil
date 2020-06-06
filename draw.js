@@ -7,6 +7,7 @@ class FieldPlot{
         this.setArrowSize(10);
         this.setDotColor("#eee");
         this.data={};
+        this.setColorFlip(false);
         document.body.appendChild(this.canvas);
     }
     setSize(x,y){
@@ -31,6 +32,9 @@ class FieldPlot{
     setDotColor(d){
         this.dotColor=d;
     }
+    setColorFlip(flip){
+        this.flip=flip;
+    }
     draw(){
         let ctx=this.ctx;
         ctx.clearRect(0,0,this.w,this.h);
@@ -43,6 +47,9 @@ class FieldPlot{
             ctx.moveTo(c1[0],c1[1]);
             ctx.lineTo(c1[0]+d[0]*this.l,c1[1]+d[1]*this.l);
             ctx.closePath();
+            if(this.setColorFlip){
+                ctx.strokeStyle=d[1]>0?"#f00":"#00f";
+            }
             ctx.stroke();
         } 
     }
@@ -66,7 +73,6 @@ class ScalerPlot{
         this.canvas.width=x;
         this.canvas.height=y;
     }
-
     addPoint(x,y,f){
         this.data[JSON.stringify([x,y])]=f;
     }

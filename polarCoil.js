@@ -1,5 +1,6 @@
-var coilWidth=5;
+var coilWidth=1;
 var coilRadius=30;
+var coilHeight=20;
 
 var E=[];
 var B=[];//magnetic field
@@ -38,11 +39,13 @@ for(var x=0;x<w;x++){
         zsqr[x].push(z_v*z_v);
     }
 }
-for(var r=coilRadius-coilWidth/2;r<=coilRadius+coilWidth/2;r+=0.1){
-    j[Math.floor(r)][h/2]={r:0,phi:1,z:0};
-} 
+for(var y=h/2-coilHeight;y<=h/2+coilHeight;y++){
+    for(var r=coilRadius-coilWidth/2;r<=coilRadius+coilWidth/2;r+=0.1){
+        j[Math.floor(r)][y]={r:0,phi:1,z:0};
+    } 
+}
 for(var r=0;r<w-1;r++){
-    for(var y=h/2-1;y<=h/2+1;y++){
+    for(var y=h/2-coilHeight-3;y<=h/2+coilHeight+3;y++){
         rotj[r][y].r=-(j[r][y+1].phi-j[r][y].phi)*idx;
         if(r!=0)
             rotj[r][y].z=-((r+1)*j[r+1][y].phi-r*j[r][y].phi)/r*idx;
@@ -59,9 +62,10 @@ function simulate(){
     sin=1;
     t+=dt;
     var csqr=c*c;
-    for(var y=h/2-1;y<=h/2+1;y++){
+    for(var y=h/2-coilHeight-1;y<=h/2+coilHeight+1;y++){
         for(var x=0;x<w;x++){
             dBdt[x][y].z+=iperm[x][y]*rotj[x][y].z*sin*dt;
+            dBdt[x][y].r+=iperm[x][y]*rotj[x][y].r*sin*dt;
         }
     }
     for(var x=1;x<w-1;x++){
@@ -70,6 +74,10 @@ function simulate(){
                 (B1[x][y+1].z+B1[x][y-1].z+ B1[x+1][y].z+B1[x-1][y].z-4*B1[x][y].z)*idx*idx;
             //dBdt[x][y].z+=laplacianBz*csqr*dt+iperm[x][y]*sin*rotj[x][y].z;
             dBdt[x][y].z+=laplacianBz*csqr*dt;
+            let laplacianBr=
+                (B1[x+1][y].r+B1[x-1][y].r+B1[x][y+1].r+B1[x][y-1].r
+                 -4*B1[x][y].r-B1[x][y].r/(x*x))*idx*idx;
+            dBdt[x][y].r+=laplacianBr*csqr*dt;
             //dBdt[x][y].z+=(-zsqr[x][y]*rotj[x][y].z-
             //               iperm[x][y]*sin*laplacianBz)*dt;
 
@@ -84,6 +92,7 @@ function simulate(){
             //B[x][y].x+=dBdt[x][y].x*dt;
             //B[x][y].y+=dBdt[x][y].y*dt;
             B[x][y].z=B1[x][y].z+dBdt[x][y].z*dt;
+            B[x][y].r=B1[x][y].r+dBdt[x][y].r*dt;
         }
     }
     var us=c*dt*idx;
@@ -95,7 +104,7 @@ function simulate(){
         B[x][h-1].z=B[x][h-2].z+coefficient*(B[x][h-2].z-B1[x][h-1].z);
     }
     for(var y=1;y<h-1;y++){
-        //B[0][y].z=B[1][y].z+coefficient*(B[1][y].z-B1[0][y].z);
+        B[0][y].z=B[1][y].z+coefficient*(B[1][y].z-B1[0][y].z);
         B[w-1][y].z=B[w-2][y].z+coefficient*(B[w-2][y].z-B1[w-1][y].z);
     }
     var tmp=B;
@@ -104,10 +113,14 @@ function simulate(){
 }
 
 
-var bplot=new ScalerPlot();
+var bplot=new FieldPlot();
 bplot.setSize(w*10,h*10);
-bplot.setDotSize(1/dx);
+bplot.setArrowSize(1/dx);
 setInterval(timer,100);
+
+var bzplot=new ScalerPlot();
+bzplot.setSize(w*10,h*10);
+
 //timer();
 /*
 {
@@ -136,17 +149,33 @@ function timer(){
     for(var i=0;i<100;i++){
         simulate();
     }
+    /*
+    let max=0;
+    for(var x=0;x<w;x++){
+        for(var y=0;y<h;y++){
+            var val=B[x][y];
+            max=Math.max(Math.sqrt(val.z*val.z+val.r*val.r),max);
+            bplot.addPoint(x*10,y*10,val.r,val.z);
+        }
+    }
+    console.log(max);
+    bplot.setDotSize(2);
+    bplot.setDotColor("#eee");
+    bplot.setArrowSize(100/max);
+    bplot.setColorFlip(true);
+    bplot.draw();*/
+    
     var max=0;
     for(var x=0;x<w;x++){
         for(var y=0;y<h;y++){
             max=Math.max(Math.abs(B[x][y].z),max);
-            bplot.addPoint(x*10,y*10,B[x][y].z);
+            bzplot.addPoint(x*10,y*10,B[x][y].z);
         }
     }
-    console.log(B[64][64]);
+    //console.log(B[64][64]);
     console.log(max);
-    bplot.setDotSize(10/max);
-    bplot.draw();
+    bzplot.setDotSize(10/max);
+    bzplot.draw();
 }
 /*
 var plot=new FieldPlot();
