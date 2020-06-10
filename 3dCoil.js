@@ -84,10 +84,17 @@ function simulate(){
     var csqr=c*c;
     for(var x=1;x<w-1;x++){
         for(var y=1;y<w-1;y++){
+            for(var z=coilPos-1;z<=coilPos+1;z++){
+                dBdt[x][y][z].z+=iperm[x][y][z]*sin*rotj[x][y][z].z;
+            }
+        }
+    }
+    for(var x=1;x<w-1;x++){
+        for(var y=1;y<w-1;y++){
             for(var z=1;z<h-1;z++){
                 let laplacianBz=
                     (B1[x][y+1][z].z+B1[x][y-1][z].z+ B1[x+1][y][z].z+B1[x-1][y][z].z-4*B1[x][y][z].z)*idx*idx;
-                dBdt[x][y][z].z+=laplacianBz*csqr*dt+iperm[x][y][z]*sin*rotj[x][y][z].z;
+                dBdt[x][y][z].z+=laplacianBz*csqr*dt;
                 //dBdt[x][y].z+=(-zsqr[x][y]*rotj[x][y].z-
                 //               iperm[x][y]*sin*laplacianBz)*dt;
 

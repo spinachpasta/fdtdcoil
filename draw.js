@@ -1,6 +1,6 @@
 
 class FieldPlot{
-    constructor(){
+    constructor(parent){
         this.canvas=document.createElement("canvas");
         this.ctx=this.canvas.getContext("2d");
         this.setSize(500,500);
@@ -8,7 +8,11 @@ class FieldPlot{
         this.setDotColor("#eee");
         this.data={};
         this.setColorFlip(false);
-        document.body.appendChild(this.canvas);
+        if(!parent){
+            document.body.appendChild(this.canvas);
+        }else{
+            parent.appendChild(this.canvas);
+        }
     }
     setSize(x,y){
         this.w=x;
@@ -37,7 +41,8 @@ class FieldPlot{
     }
     draw(){
         let ctx=this.ctx;
-        ctx.clearRect(0,0,this.w,this.h);
+        ctx.fillStyle="#fff";
+        ctx.fillRect(0,0,this.w,this.h);
         ctx.fillStyle=this.dotColor;
         for(var c in this.data){
             var c1=JSON.parse(c);
@@ -90,7 +95,9 @@ class ScalerPlot{
     }
     draw(){
         let ctx=this.ctx;
-        ctx.clearRect(0,0,this.w,this.h);
+        ctx.fillStyle="#fff";
+        ctx.fillRect(0,0,this.w,this.h);
+        ctx.fillStyle="#000";
         for(var c in this.data){
             var c1=JSON.parse(c);
             let d=this.data[c];
