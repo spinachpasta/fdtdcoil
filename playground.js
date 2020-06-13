@@ -1,8 +1,8 @@
 
 var coilWidth=1;
-var coilRadius=4;
+var coilRadius=9;
 var coilHeight=1;
-
+var inducanceDiv=document.getElementById("inductance");
 
 var E=[];
 var B=[];//magnetic field
@@ -19,9 +19,9 @@ var z_v= 376.730313668;//impedance of vaccum(ohm)
 var perm_v=(8.8541878128*Math.pow(10,-12));
 var c=299792458;//m/s
 
-const coinRadius=10;//10mm
-const coinPos=h/2+2;
-const coinHeight=1;//3mm
+let coinRadius=10;//10mm
+let coinPos=h/2+2;
+let coinHeight=1;//3mm
 
 const metalMu=1.256665*Math.pow(10,-6);
 const metaliPerm=1/(perm_v*0.999991);//copper
@@ -57,32 +57,20 @@ for(var x=0;x<w;x++){
         zsqr[x].push(z_v*z_v);
     }
 }
-for(var y=h/2-coilHeight;y<=h/2+coilHeight;y++){
-    for(var r=coilRadius-coilWidth/2;r<=coilRadius+coilWidth/2;r+=0.1){
-        j[Math.floor(r)][y]={r:0,phi:1,z:0};
-    } 
-}
-
 for(var x=0;x<=coinRadius;x++){
     for(var y=coinPos-coinHeight/2;y<=coinPos+coinHeight/2;y++){
         iperm[x][y]=metaliPerm;
     }
 }
-for(var r=0;r<w-1;r++){
-    for(var y=h/2-coilHeight-3;y<=h/2+coilHeight+3;y++){
-        rotj[r][y].r=-(j[r][y+1].phi-j[r][y].phi)*idx;
-        if(r!=0)
-            rotj[r][y].z=-((r+1)*j[r+1][y].phi-r*j[r][y].phi)/r*idx;
-    }
-}
+let avgInductance=0;
+let count=0;
+let loopcount=0;
+updateCoil();
 console.log("aaa");
 console.log(dBdt);
 console.log(B);
 var t=0;
 console.log(dt*metalCoefficient);
-let avgInductance=0;
-let count=0;
-let loopcount=0;
 function simulate(){
     loopcount++;
     var dti=1/dt;
@@ -125,7 +113,7 @@ function simulate(){
         }
     }
     //console.log(metalCoefficient);
-    
+
     //const extinction=Math.exp(-csqr*45*dt);
     //console.log(extinction);
     //coinboundary
@@ -136,18 +124,20 @@ function simulate(){
             dBdt[x][y].r+=-dBdt[x][y].r*dt*metalCoefficient;
         }
     }*/
-    for(var x=0;x<=coinRadius;x++){
-        for(var y=coinPos;y<=coinPos+coinHeight;y++){
-            dBdt[x][y].z=0;
-            dBdt[x][y].r=0;
-        }
-    }
     for(var x=0;x<w;x++){
         for(var y=0;y<h;y++){
             //B[x][y　].x+=dBdt[x][y].x*dt;
             //B[x][y].y+=dBdt[x][y].y*dt;
             B[x][y].z=B1[x][y].z+dBdt[x][y].z*dt;
             B[x][y].r=B1[x][y].r+dBdt[x][y].r*dt;
+        }
+    }
+    for(var x=0;x<=coinRadius;x++){
+        for(var y=coinPos;y<=coinPos+coinHeight;y++){
+            B[x][y].z=0;
+            B[x][y].r=0;
+            B1[x][y].z=0;
+            B1[x][y].r=0;
         }
     }
     var us=c*dt*idx;
@@ -180,63 +170,30 @@ function simulate(){
     var i_0=coilWidth*dx*coilHeight*dx;
     //console.log(i_0);
     //console.log(`${voltage}V`);
-    
+
     avgInductance+=-(voltage/(i_0*omega*Math.cos(omegat)));
 }
 
 
 var bplot=new FieldPlot();
-bplot.setSize(w*10,h*10);
+bplot.setSize(w*5,h*5);
 bplot.setArrowSize(1/dx);
 setInterval(timer,10);
 
-var bzplot=new ScalerPlot();
-bzplot.setSize(w*10,h*10);
-
-//timer();
-/*
-{
-    var jplot=new FieldPlot();
-    var max=0;
-    jplot.setSize(w*10,h*10);
-    jplot.setArrowSize(100*dx);
-    jplot.setDotSize(2);
-    jplot.setDotColor("#eee");
-    for(var x=0;x<w;x++){
-        for(var y=0;y<h;y++){
-            var val=rotj[x][y];
-            max=Math.max(Math.sqrt(val.z*val.z+val.r*val.r),max);
-            //console.log(val);
-            if(val.z>0){
-                console.log([x,y]);
-            }
-            jplot.addPoint(x*10,y*10,val.r,val.z);
-        }
-    }
-    console.log(max);
-    jplot.setArrowSize(10/max);
-    jplot.draw();
-}*/
 function timer(){
-    //count=0;
-    //avgInductance=0;
-    if(count>1000){
-        //return;
-    }
-    avgInductance=0;
     for(var i=0;i<100;i++){
         simulate();
     }
-    console.log(avgInductance/100);
 
-    let max=0;
-    for(var x=0;x<w;x++){
-        for(var y=0;y<h;y++){
+    
+    max=0;
+    for(var x=0;x<w/2;x++){
+        for(var y=h*0.25;y<h*0.75;y++){
             var val=B[x][y];
             var norm=val.z*val.z+val.r*val.r;
             norm=Math.sqrt(norm);
             max=Math.max(norm,max);
-            bplot.addPoint(x*10,y*10,-val.r,val.z);
+            bplot.addPoint(x*10,(y-h*0.25)*10,-val.r,val.z);
             //if(norm!=0)
             ///    bplot.addPoint(x*10,y*10,-val.r/norm,val.z/norm);
         }
@@ -250,6 +207,7 @@ function timer(){
     bplot.setColorFlip(true);
     bplot.draw();
     var integral=0;
+    inducanceDiv.innerHTML=avgInductance/count;
     for(var x=0;x<w;x++){
         integral+=-B[x][0].z;
         integral+=B[x][h-1].z;
@@ -257,31 +215,92 @@ function timer(){
     for(var y=0;y<h;y++){
         integral+=B[w-1][0].r;
     }
-    //console.log(`integral${integral}`);
-    /*
-    var max=0;
+}
+function resetB(){
     for(var x=0;x<w;x++){
         for(var y=0;y<h;y++){
-            max=Math.max(Math.abs(B[x][y].z),max);
-            bzplot.addPoint(x*10,y*10,B[x][y].z);
+            B[x][y].z=0;
+            B[x][y].r=0;
+            B1[x][y].z=0;
+            B1[x][y].r=0;
+            dBdt[x][y].z=0;
+            dBdt[x][y].r=0;
         }
     }
-    //console.log(B[64][64]);
-    console.log(max);
-    bzplot.setDotSize(10/max);
-    bzplot.draw();
-    */
 }
-/*
-var plot=new FieldPlot();
-plot.setSize(w*10,h*10);
-plot.setArrowSize(100*dx);
-plot.setDotSize(2);
-plot.setDotColor("#eee");
-for(var x=0;x<w;x++){
-    for(var y=0;y<h;y++){
-        plot.addPoint(x*10,y*10,rotj[x][y].z,0);
+function updateCoil(){
+    count=0;
+    avgInductance=0;
+    for(var x=0;x<w;x++){
+        for(var y=0;y<h;y++){
+            rotj[x][y]={r:0,phi:0,z:0};
+            j[x][y]={r:0,phi:0,z:0};
+        }
+    }
+    for(var y=Math.max(h/2-coilHeight,0);y<=h/2+coilHeight&&y<=h;y++){
+        for(var r=Math.max(coilRadius-coilWidth/2,0);
+            r<=coilRadius+coilWidth/2&&r<=w;r++){
+            j[Math.floor(r)][Math.floor(y)]={r:0,phi:1,z:0};
+        } 
+    }
+    for(var r=0;r<w-1;r++){
+        for(var y=h/2-coilHeight-3;y<=h/2+coilHeight+3;y++){
+            rotj[r][y].r=-(j[r][y+1].phi-j[r][y].phi)*idx;
+            if(r!=0)
+                rotj[r][y].z=-((r+1)*j[r+1][y].phi-r*j[r][y].phi)/r*idx;
+        }
     }
 }
-plot.draw();
-*/
+
+console.log("aaaaa");
+var coilRadiusInput=document.getElementById("coilRadius");
+var coilWidthInput=document.getElementById("coilWidth");
+var coilHeightInput=document.getElementById("coilHeight");
+var coinRadiusInput=document.getElementById("coinRadius");
+var coinPosInput=document.getElementById("coinPos");
+var coinHeightInput=document.getElementById("coinHeight");
+
+coinHeightInput.value=coinHeight;
+coinRadiusInput.value=coinRadius;
+coinPosInput.value=coinPos-h/2;
+
+coilRadiusInput.value=coilRadius;
+coilWidthInput.value=coilWidth;
+coilHeightInput.value=coilHeight;
+coilRadiusInput.onchange=function(e){
+    coilRadius=Number(coilRadiusInput.value);
+    updateCoil();
+    resetB();
+}
+
+coilWidthInput.onchange=function(e){
+    coilWidth=Number(coilWidthInput.value);
+    updateCoil();
+    resetB();
+}
+
+coilHeightInput.onchange=function(e){
+    coilHeight=Number(coilHeightInput.value);
+    updateCoil();
+    resetB();
+}
+
+
+coinRadiusInput.onchange=function(e){
+    coinRadius=Number(coinRadiusInput.value);
+    updateCoil();
+    resetB();
+    //updateCoil();
+}
+
+coinPosInput.onchange=function(e){
+    coinPos=Number(coinPosInput.value)+h/2;
+    resetB();
+    //updateCoil();
+}
+
+coinHeightInput.onchange=function(e){
+    coinHeight=Number(coilHeightInput.value);
+    resetB();
+    //updateCoil();
+}

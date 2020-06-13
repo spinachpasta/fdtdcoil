@@ -1,7 +1,9 @@
+const startIntegral=400;
+const steps=500;
 function experiment(d,r,ww,iscoin){
     var coilWidth=ww;
     var coilRadius=r;
-    var coilHeight=1;
+    var coilHeight=3;
 
 
     var E=[];
@@ -34,7 +36,7 @@ function experiment(d,r,ww,iscoin){
     var idx=1/dx;
     var dt=0.7*dx/c;//1/(c*0.15*idx);//in second  <1/ c/sqrt2　(1/dx)
     console.log(`dt:${dt}`);//1Thz
-
+    var startinit=new Date().getTime();
     var conductivity=5.96*Math.pow(10,7)//copper:5.96×10^7	S/m
     //console.log(j.push);
     for(var x=0;x<w;x++){
@@ -75,7 +77,8 @@ function experiment(d,r,ww,iscoin){
                 rotj[r][y].z=-((r+1)*j[r+1][y].phi-r*j[r][y].phi)/r*idx;
         }
     }
-    console.log("aaa");
+    console.log(-startinit+new Date().getTime());
+    console.log("init time");
     console.log(dBdt);
     console.log(B);
     var t=0;
@@ -178,10 +181,20 @@ function experiment(d,r,ww,iscoin){
         }
         voltage*=2*Math.PI;
         var i_0=coilWidth*dx*coilHeight*dx;
-        if(count>1000){
+        if(count>startIntegral){
             avgInductance+=-(voltage/(i_0*omega*Math.cos(omegat)));
         }
     }
+
+
+
+    //var bzplot=new ScalerPlot();
+    //bzplot.setSize(w*10,h*10);
+
+    for(var i=0;i<steps;i++){
+        simulate();
+    }
+    return avgInductance/(count-startIntegral);
 
     var div=document.createElement("div");
     div.style.float="left";
@@ -198,16 +211,7 @@ function experiment(d,r,ww,iscoin){
     bplot.setSize(w*10,h*10);
     bplot.setArrowSize(1/dx);
 
-
-
-    //var bzplot=new ScalerPlot();
-    //bzplot.setSize(w*10,h*10);
-
-    for(var i=0;i<2500;i++){
-        simulate();
-    }
-
-    console.log(avgInductance/count);
+    console.log(avgInductance/count-startIntegral);
     itag.innerHTML="inductance:"+(avgInductance/(count-1000));
     let max=0;
     for(var x=0;x<w;x+=4){
@@ -237,31 +241,79 @@ function experiment(d,r,ww,iscoin){
     for(var y=0;y<h;y++){
         integral+=B[w-1][0].r;
     }
-    return avgInductance/(count-1000);
+    return avgInductance/(count-500);
 }
+//draw
 /*
 experiment(10,30,10,true);
 experiment(10,30,10,false);*/
-var latex_table="";
+var latex_table="\\hline\n";
 
-latex_table +="\hline \n";
+latex_table +="コインの距離 ";
+
+latex_table +="& \n";
+latex_table +="コインなし&";
 for(var j=0;j<10;j++){
-    latex_table +="0";
+    var d=Math.floor(j*j)+5;//j*j*j/4
+    latex_table +=d;
     if(j<9)
         latex_table +="&";
 
 }
-latex_table +="\\ \n";
-for(var i=1;i<=6;i++){
+latex_table +="\\\\ \n";
+latex_table+="/ コイルの半径";
+for(var j=0;j<=10;j++){
+    latex_table +="&";
+}
+latex_table +="\\\\ \n";
+
+var start=new Date().getTime();
+for(var i=1;i<=1;i++){
     var r=i*i;
-    latex_table +="\hline";
+    r=4;
+    latex_table +="\\hline\n";
+    latex_table +=r;
+    latex_table +="&";
+    var num=experiment(0,r,1,false)*1000*1000;
+    var numstr=num.toString();
+    if(num<1000){
+        numstr=numstr.substr(0,5);
+    }else{
+        var n1="";
+        for(var i=0;i<numstr.length;i++){
+            n1+=numstr[i];
+            if(numstr[i]==".")break;
+        }
+        numstr=n1;
+    }
+    latex_table +=numstr;
+    latex_table +="&";
     for(var j=0;j<10;j++){
-        latex_table +="0";
+        var d=j;
+        var num=experiment(d,r,1,true)*1000*1000;
+        var numstr=num.toString();
+        if(num<1000){
+            numstr=numstr.substr(0,5);
+        }else{
+            var n1="";
+            for(var i=0;i<numstr.length;i++){
+                n1+=numstr[i];
+                if(numstr[i]==".")break;
+            }
+            numstr=n1;
+        }
+        latex_table +=numstr;
         if(j<9)
             latex_table +="&";
-
     }
-}
+    
+    alert(i);
 
+    latex_table +="\\\\\n";
+}
+latex_table +="\\hline\n";
 var textbox=document.createElement("textarea");
+textbox.cols=40;
+textbox.rows=30;
 textbox.value=latex_table;
+document.body.appendChild(textbox);
